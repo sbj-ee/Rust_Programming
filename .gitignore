@@ -1,0 +1,6 @@
+# Cargo build artifacts
+/target/
+
+# IDE
+.vscode/
+.idea/

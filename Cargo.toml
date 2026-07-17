@@ -1,0 +1,136 @@
+[package]
+name = "rust_programming"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Every exercise is a standalone `main.rs` under exercises/<NN_name>/, the same
+# layout ../Go_Programming uses for `package main` directories. Cargo does not
+# auto-discover binaries outside `src/bin/`, so each one is declared explicitly
+# below. `cargo build` builds all of them; `cargo run --bin NN_name` runs one.
+#
+# No external dependencies — every exercise uses only the standard library,
+# matching the rule ../Go_Programming and ../CPP_Programming follow.
+
+[[bin]]
+name = "01_hello_world"
+path = "exercises/01_hello_world/main.rs"
+
+[[bin]]
+name = "02_variables_and_types"
+path = "exercises/02_variables_and_types/main.rs"
+
+[[bin]]
+name = "03_control_flow"
+path = "exercises/03_control_flow/main.rs"
+
+[[bin]]
+name = "04_functions"
+path = "exercises/04_functions/main.rs"
+
+[[bin]]
+name = "05_ownership"
+path = "exercises/05_ownership/main.rs"
+
+[[bin]]
+name = "06_borrowing_and_references"
+path = "exercises/06_borrowing_and_references/main.rs"
+
+[[bin]]
+name = "07_slices_and_arrays"
+path = "exercises/07_slices_and_arrays/main.rs"
+
+[[bin]]
+name = "08_structs"
+path = "exercises/08_structs/main.rs"
+
+[[bin]]
+name = "09_enums_and_pattern_matching"
+path = "exercises/09_enums_and_pattern_matching/main.rs"
+
+[[bin]]
+name = "10_error_handling"
+path = "exercises/10_error_handling/main.rs"
+
+[[bin]]
+name = "11_traits"
+path = "exercises/11_traits/main.rs"
+
+[[bin]]
+name = "12_generics"
+path = "exercises/12_generics/main.rs"
+
+[[bin]]
+name = "13_collections"
+path = "exercises/13_collections/main.rs"
+
+[[bin]]
+name = "14_closures_and_iterators"
+path = "exercises/14_closures_and_iterators/main.rs"
+
+[[bin]]
+name = "15_lifetimes"
+path = "exercises/15_lifetimes/main.rs"
+
+[[bin]]
+name = "16_smart_pointers"
+path = "exercises/16_smart_pointers/main.rs"
+
+[[bin]]
+name = "17_modules_and_cargo"
+path = "exercises/17_modules_and_cargo/main.rs"
+
+[[bin]]
+name = "18_testing"
+path = "exercises/18_testing/main.rs"
+
+[[bin]]
+name = "19_threads"
+path = "exercises/19_threads/main.rs"
+
+[[bin]]
+name = "20_channels"
+path = "exercises/20_channels/main.rs"
+
+[[bin]]
+name = "21_shared_state"
+path = "exercises/21_shared_state/main.rs"
+
+[[bin]]
+name = "22_file_io"
+path = "exercises/22_file_io/main.rs"
+
+[[bin]]
+name = "23_custom_errors"
+path = "exercises/23_custom_errors/main.rs"
+
+[[bin]]
+name = "24_json_from_scratch"
+path = "exercises/24_json_from_scratch/main.rs"
+
+[[bin]]
+name = "25_tcp_sockets"
+path = "exercises/25_tcp_sockets/main.rs"
+
+[[bin]]
+name = "26_cli_and_subprocess"
+path = "exercises/26_cli_and_subprocess/main.rs"
+
+[[bin]]
+name = "27_unsafe_rust"
+path = "exercises/27_unsafe_rust/main.rs"
+
+[[bin]]
+name = "28_macros"
+path = "exercises/28_macros/main.rs"
+
+[[bin]]
+name = "29_async_await"
+path = "exercises/29_async_await/main.rs"
+
+[[bin]]
+name = "30_benchmarking"
+path = "exercises/30_benchmarking/main.rs"
+
+[profile.release]
+debug = true

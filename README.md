@@ -1,5 +1,7 @@
 # Rust Programming
 
+*Topics: rust, rust-lang, learning, education, systems-programming, tutorial, exercises*
+
 A structured Rust programming learning project covering fundamentals through concurrent,
 networked, and systems programming. Designed for someone who already knows C and/or C++
 (see `../C_Programming` and `../CPP_Programming`) — and ideally has also seen `../Go_Programming`

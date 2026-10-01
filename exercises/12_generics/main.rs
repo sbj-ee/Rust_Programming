@@ -10,14 +10,19 @@ use std::fmt::Display;
 // T: PartialOrd is a TRAIT BOUND — without it, `>` would not compile because
 // not every type supports ordering. Compare to C's void* (no bound at all,
 // no safety) or Go's `[T cmp.Ordered]` (structurally similar to this).
-fn largest<T: PartialOrd + Copy>(values: &[T]) -> T {
-    let mut max = values[0];
-    for &v in values {
+//
+// Returns Option<T> because an empty slice has no largest element (exercise
+// 07 makes the same point for i32). PartialOrd rather than Ord lets this work
+// for f64 too; `Iterator::max` needs Ord, which f64 lacks because of NaN.
+fn largest<T: PartialOrd + Copy>(values: &[T]) -> Option<T> {
+    let (&first, rest) = values.split_first()?;
+    let mut max = first;
+    for &v in rest {
         if v > max {
             max = v;
         }
     }
-    max
+    Some(max)
 }
 
 // A generic struct — Point<i32>, Point<f64>, Point<String> are all
@@ -56,12 +61,14 @@ fn main() {
     let ints = [3, 7, 1, 9, 4];
     let floats = [3.5, 1.2, 9.9, 0.1];
     println!(
-        "largest(ints)={} largest(floats)={}",
+        "largest(ints)={:?} largest(floats)={:?}",
         largest(&ints),
         largest(&floats)
     );
     // Each call above compiles a SEPARATE largest::<i32> / largest::<f64> —
     // this is monomorphization, and it's why there's no runtime dispatch cost.
+    let no_chars: [char; 0] = [];
+    println!("largest(&[] as &[char]) = {:?}", largest(&no_chars));
 
     // Section 2: generic structs
     println!("\n--- Section 2: generic structs ---");
@@ -97,4 +104,31 @@ fn main() {
         "  - `where` clauses are equivalent to inline bounds, preferred once bounds get numerous."
     );
     println!("  - Go's generics work structurally like this; C's void*+macros give up type safety entirely.");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn largest_ints() {
+        let cases: [(&[i32], Option<i32>); 4] = [
+            (&[], None),
+            (&[3, 7, 1, 9, 4], Some(9)),
+            (&[-1], Some(-1)),
+            (&[-8, -3, -5], Some(-3)),
+        ];
+        for (input, expected) in cases {
+            assert_eq!(largest(input), expected, "input was {input:?}");
+        }
+    }
+
+    #[test]
+    fn largest_other_types() {
+        assert_eq!(largest(&[3.5, 1.2, 9.9, 0.1]), Some(9.9));
+        assert_eq!(largest(&['r', 'u', 's', 't']), Some('u'));
+        assert_eq!(largest(&["pear", "apple", "zebra"]), Some("zebra"));
+        let empty: [f64; 0] = [];
+        assert_eq!(largest(&empty), None);
+    }
 }

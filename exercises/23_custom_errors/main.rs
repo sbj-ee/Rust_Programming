@@ -53,13 +53,16 @@ impl From<ParseIntError> for ConfigError {
 fn parse_port(raw: Option<&str>) -> Result<u16, ConfigError> {
     let raw = raw.ok_or_else(|| ConfigError::MissingField("port".to_string()))?;
     let value: i32 = raw.parse()?; // ParseIntError -> ConfigError via the From impl above
-    if !(1..=65535).contains(&value) {
-        return Err(ConfigError::OutOfRange {
-            field: "port".to_string(),
-            value,
-        });
+    let out_of_range = || ConfigError::OutOfRange {
+        field: "port".to_string(),
+        value,
+    };
+    if value == 0 {
+        return Err(out_of_range()); // port 0 means "any port", not a valid config value
     }
-    Ok(value as u16)
+    // u16::try_from is the CHECKED conversion: it fails for anything outside
+    // 0..=65535 instead of silently truncating the way `value as u16` would.
+    u16::try_from(value).map_err(|_| out_of_range())
 }
 
 // A function that can fail for reasons from MULTIPLE unrelated error types
@@ -112,4 +115,75 @@ fn main() {
     );
     println!("  - In real projects, `thiserror` generates this Display/Error boilerplate; `anyhow` gives you");
     println!("    a ready-made Box<dyn Error>-like type with context() — both are worth adopting past this exercise.");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_port_accepts_valid_ports() {
+        for (raw, expected) in [("1", 1), ("80", 80), ("8080", 8080), ("65535", 65535)] {
+            assert_eq!(
+                parse_port(Some(raw)).ok(),
+                Some(expected),
+                "input was {raw:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_port_missing_field() {
+        assert!(matches!(
+            parse_port(None),
+            Err(ConfigError::MissingField(ref f)) if f == "port"
+        ));
+    }
+
+    #[test]
+    fn parse_port_invalid_number_keeps_source() {
+        for raw in ["", "not-a-number", "80.5", "99999999999"] {
+            let err = parse_port(Some(raw)).unwrap_err();
+            assert!(
+                matches!(err, ConfigError::InvalidNumber(_)),
+                "input was {raw:?}"
+            );
+            assert!(
+                err.source().is_some(),
+                "InvalidNumber should expose its cause"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_port_out_of_range() {
+        for (raw, value) in [("0", 0), ("-1", -1), ("65536", 65536), ("99999", 99999)] {
+            match parse_port(Some(raw)) {
+                Err(ConfigError::OutOfRange { field, value: v }) => {
+                    assert_eq!(field, "port");
+                    assert_eq!(v, value);
+                }
+                other => panic!("{raw:?}: expected OutOfRange, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn display_messages() {
+        assert_eq!(
+            parse_port(None).unwrap_err().to_string(),
+            "missing field: port"
+        );
+        assert_eq!(
+            parse_port(Some("70000")).unwrap_err().to_string(),
+            "port=70000 is out of range"
+        );
+    }
+
+    #[test]
+    fn boxed_error_path() {
+        assert_eq!(load_and_validate("443").ok(), Some(443));
+        let err = load_and_validate("x").unwrap_err();
+        assert!(err.downcast_ref::<ConfigError>().is_some());
+    }
 }

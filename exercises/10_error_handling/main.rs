@@ -72,7 +72,16 @@ fn main() {
     // Section 5: panic! — for programmer errors and invariant violations,
     // not for routine, expected failure (that's what Result is for)
     println!("\n--- Section 5: panic! (not invoked here) ---");
-    println!("panic!(\"message\") unwinds the stack, runs Drop impls, and aborts the process");
+    println!(
+        "panic!(\"message\") unwinds the CURRENT THREAD's stack, running Drop impls as it goes."
+    );
+    println!(
+        "If that thread is main, the process then exits with status 101; a panic on any other"
+    );
+    println!("thread ends only that thread (join() returns Err — see exercise 21). With");
+    println!(
+        "`panic = \"abort\"` in a Cargo profile, it aborts immediately instead, with no unwinding."
+    );
     println!("unwrap()/expect() on an Err or None call panic! internally");
 
     println!("\nNotes:");
@@ -80,4 +89,42 @@ fn main() {
     println!("  - `?` is NOT exceptions — it's sugar for 'match Ok(v)=>v, Err(e)=>return Err(e.into())'.");
     println!("  - Reach for unwrap/expect only when failure is a bug, not an expected runtime condition.");
     println!("  - See exercise 23 for custom error types and Box<dyn std::error::Error>.");
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_positive_cases() {
+        let cases = [
+            ("42", Ok(42)),
+            ("1", Ok(1)),
+            ("2147483647", Ok(i32::MAX)),
+            ("0", Err("0 is not positive".to_string())),
+            ("-5", Err("-5 is not positive".to_string())),
+        ];
+        for (input, expected) in cases {
+            assert_eq!(parse_positive(input), expected, "input was {input:?}");
+        }
+    }
+
+    #[test]
+    fn parse_positive_rejects_non_numbers() {
+        for input in ["", "abc", "4.2", " 7", "2147483648"] {
+            assert!(parse_positive(input).is_err(), "should reject {input:?}");
+        }
+    }
+
+    #[test]
+    fn sum_all_cases() {
+        assert_eq!(sum_all(&[]), Ok(0));
+        assert_eq!(sum_all(&["1", "2", "3"]), Ok(6));
+        // The first failure short-circuits, and its message is propagated as-is.
+        assert_eq!(
+            sum_all(&["1", "-4", "oops"]),
+            Err("-4 is not positive".to_string())
+        );
+        assert!(sum_all(&["1", "oops", "3"]).is_err());
+    }
 }

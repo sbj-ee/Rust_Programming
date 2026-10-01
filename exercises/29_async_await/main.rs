@@ -9,7 +9,7 @@
 
 use std::future::Future;
 use std::pin::Pin;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::task::{Context, Poll, Wake, Waker};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -44,13 +44,21 @@ fn block_on<F: Future>(future: F) -> F::Output {
     }
 }
 
-// A hand-written Future — this is what the compiler generates automatically
-// for an `async fn` body, made explicit here. On first poll, it spawns a
-// helper thread to sleep and then call the waker; on later polls, it
-// checks whether the deadline has passed.
+// A hand-written LEAF future — the kind an `async fn` ultimately awaits.
+// The compiler turns an `async fn` body into a state machine that polls
+// futures like this one; it never writes a timer for you. Real runtimes
+// provide leaf futures for timers and I/O (tokio::time::sleep, sockets);
+// here we build a timer by hand.
+//
+// The Future contract: when returning Pending, arrange for the waker from
+// the MOST RECENT poll to be woken. A future can be moved between tasks or
+// executors, and each poll may carry a different waker, so storing only the
+// first one would wake the wrong task. So the timer thread shares a slot
+// with the future, and every poll refreshes the waker in that slot.
 struct Delay {
     when: Instant,
-    waker_registered: bool,
+    waker: Arc<Mutex<Option<Waker>>>,
+    timer_started: bool,
 }
 
 impl Future for Delay {
@@ -61,17 +69,31 @@ impl Future for Delay {
         if Instant::now() >= this.when {
             return Poll::Ready(());
         }
-        if !this.waker_registered {
-            let waker = cx.waker().clone();
+        // Store (or replace) the current waker on EVERY poll, skipping the
+        // clone when it would wake the same task anyway.
+        {
+            let mut slot = this.waker.lock().unwrap();
+            match slot.as_ref() {
+                Some(existing) if existing.will_wake(cx.waker()) => {}
+                _ => *slot = Some(cx.waker().clone()),
+            }
+        }
+        if !this.timer_started {
+            // One helper thread per Delay keeps the example std-only; a real
+            // runtime multiplexes every timer onto a single timer wheel/thread.
+            let slot = Arc::clone(&this.waker);
             let when = this.when;
             thread::spawn(move || {
                 let now = Instant::now();
                 if when > now {
                     thread::sleep(when - now);
                 }
-                waker.wake(); // this is what turns the parked block_on thread back on
+                // Wake whichever waker the latest poll left in the slot.
+                if let Some(waker) = slot.lock().unwrap().take() {
+                    waker.wake(); // this is what turns the parked block_on thread back on
+                }
             });
-            this.waker_registered = true;
+            this.timer_started = true;
         }
         Poll::Pending
     }
@@ -80,7 +102,8 @@ impl Future for Delay {
 fn delay(duration: Duration) -> Delay {
     Delay {
         when: Instant::now() + duration,
-        waker_registered: false,
+        waker: Arc::new(Mutex::new(None)),
+        timer_started: false,
     }
 }
 

@@ -4,7 +4,7 @@
 
 A structured Rust programming learning project covering fundamentals through concurrent,
 networked, and systems programming. Designed for someone who already knows C and/or C++
-(see `../C_Programming` and `../CPP_Programming`) — and ideally has also seen `../Go_Programming`
+(see the companion repos [C_Programming](https://github.com/sbj-ee/C_Programming) and [CPP_Programming](https://github.com/sbj-ee/CPP_Programming)) — and ideally has also seen [Go_Programming](https://github.com/sbj-ee/Go_Programming)
 — and wants to learn idiomatic Rust: ownership and borrowing instead of manual memory
 management or garbage collection.
 
@@ -13,11 +13,12 @@ management or garbage collection.
 ```
 Rust_Programming/
 ├── Cargo.toml       # Single package; every exercise is an explicit [[bin]] target
+├── LICENSE          # MIT
 ├── Introduction.md  # Dev environment, build tools, exercise progression
 ├── Foreword.md      # Rust's origins at Mozilla, ownership, fearless concurrency
 ├── exercises/       # Progressive programs, each building on the last
-│   ├── 01_hello_world/ … 30_benchmarking/
-└── topics/              # Markdown reference sheets by concept
+│   └── 01_hello_world/ … 30_benchmarking/
+└── topics/          # Markdown reference sheets by concept
     ├── 01_types/                    scalar/compound types, overflow, casts, const vs static
     ├── 02_ownership_and_borrowing/  moves, Copy, the aliasing rule, NLL — the core idea
     ├── 03_memory/                   stack vs heap, Drop/RAII, no GC, memory-safety bug table
@@ -58,9 +59,11 @@ make clean
 
 ## Requirements
 
-- `rustc`/`cargo` 1.75+ (stable channel; nothing here needs nightly)
+- `rustc`/`cargo` 1.75+ (stable channel; nothing here needs nightly — the optional `miri`
+  tool mentioned below is the only nightly-only piece). Declared as `rust-version` in
+  `Cargo.toml` and checked in CI.
 - No external dependencies — every exercise uses only the standard library, matching the
-  rule `../Go_Programming` and `../CPP_Programming` follow
+  rule the Go and C++ companion repos follow
 
 ## Exercises
 
@@ -95,14 +98,14 @@ make clean
 | 27 | Unsafe Rust | raw pointers, `extern "C"` FFI, mutable statics, safe abstractions over `unsafe` |
 | 28 | Macros | `macro_rules!`, fragment specifiers, repetition, hygiene |
 | 29 | Async/Await | `async fn`, a hand-rolled `block_on` executor, `Future`/`Poll`/`Waker` |
-| 30 | Benchmarking & Profiling | a `std::time::Instant` micro-bench harness, `black_box`, why there's no built-in `cargo bench` |
+| 30 | Benchmarking & Profiling | a `std::time::Instant` micro-bench harness, `black_box`, `cargo bench` vs nightly `#[bench]` — run with `--release` |
 
 ---
 
 ## Appendix A: The Cargo.toml `[[bin]]` Layout
 
-Unlike `C_Programming` and `CPP_Programming`, there is no per-exercise Makefile and no
-linker flags to manage — and unlike `Go_Programming`'s `go build ./...` wildcard, Cargo does
+Unlike [C_Programming](https://github.com/sbj-ee/C_Programming) and [CPP_Programming](https://github.com/sbj-ee/CPP_Programming), there is no per-exercise Makefile and no
+linker flags to manage — and unlike [Go_Programming](https://github.com/sbj-ee/Go_Programming)'s `go build ./...` wildcard, Cargo does
 not auto-discover binaries outside `src/bin/`. Each exercise is declared explicitly:
 
 ```toml
@@ -140,6 +143,7 @@ clean:
 make                                              # build everything
 cargo build --bin 11_traits                        # build one exercise
 cargo run --bin 11_traits                           # build+run without a separate step
+cargo run --release --bin 30_benchmarking           # benchmarks are only meaningful optimized
 make test                                          # cargo test (runs every #[cfg(test)] mod)
 make clippy                                        # cargo clippy --all-targets -- -D warnings
 cargo fmt                                           # apply formatting in place
@@ -183,6 +187,9 @@ cargo test                    # runs every #[test] fn
 cargo +nightly miri run       # interprets the program, flags undefined behavior in `unsafe` code
 ```
 
+`miri` is **nightly-only**: install it with `rustup +nightly component add miri` (it is not
+available as a stable component). Everything else in this project builds on stable.
+
 `miri` has no C/C++ analog with the same precision — ASan/UBSan catch a subset of UB at
 runtime on real hardware; `miri` runs your program in an interpreter that tracks Rust's
 specific aliasing and validity rules and flags violations even in code paths that happen not
@@ -195,7 +202,7 @@ rust-gdb ./target/debug/07_slices_and_arrays   # a gdb wrapper with Rust-aware p
 ```
 
 Rust uses OS threads (1:1, see exercise 19/topics/07), so there's no goroutine-aware `dlv`
-equivalent needed the way `Go_Programming`'s appendix covers — a normal `gdb`/`lldb` session
+equivalent needed the way [Go_Programming](https://github.com/sbj-ee/Go_Programming)'s appendix covers — a normal `gdb`/`lldb` session
 already understands every thread in a Rust process the same way it understands a C++ one.
 
 ### `valgrind` — still works, because there's no GC to confuse it
@@ -232,5 +239,9 @@ strip target/release/30_benchmarking                   # remove debug symbols, s
 | `clang-format` / style guide | enforce style | `cargo fmt` (rustfmt) — one canonical style |
 | `-Wall -Wextra -Wpedantic` | compiler warnings | `cargo clippy -- -D warnings` — much broader lint set |
 | ASan / UBSan | catch UB at runtime | `cargo miri` — catches UB in an interpreter, not just at runtime on real hardware |
-| `ar`/`.a`, `.so` + `LD_LIBRARY_PATH` | static/shared libraries | `.rlib` (static, Rust-only) / `.so`/`.dylib` via `crate-type = ["dylib"]` |
+| `ar`/`.a`, `.so` + `LD_LIBRARY_PATH` | static/shared libraries | `.rlib` (Rust-only); C-compatible `.a` via `crate-type = ["staticlib"]` and `.so`/`.dylib` via `crate-type = ["cdylib"]` (`dylib` is a Rust-ABI library, not for C callers) |
 | `strings` | find readable text in a binary | `strings` — unchanged, Rust binaries are still ELF/Mach-O |
+
+## License
+
+MIT — see [LICENSE](LICENSE).

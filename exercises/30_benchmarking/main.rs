@@ -1,10 +1,17 @@
 // Exercise 30: Benchmarking & Profiling
 //
 // Demonstrates: a hand-rolled `std::time::Instant`-based micro-benchmark
-// harness. Stable Rust's built-in `cargo test --bench` requires nightly's
-// `#[bench]` attribute, so real projects use the `criterion` crate instead
-// (not a dependency here, in keeping with the zero-dependency rule) — this
-// exercise shows what criterion automates: warmup, repetition, averaging.
+// harness. `cargo bench` itself works on stable Rust — it builds the
+// `benches/` targets with optimizations and runs them. What is nightly-only
+// is the built-in libtest `#[bench]` attribute (and `test::Bencher`), so on
+// stable, bench targets set `harness = false` and use a library such as
+// `criterion` (not a dependency here, in keeping with the zero-dependency
+// rule). This exercise shows what criterion automates: warmup, repetition,
+// averaging.
+//
+// RUN IT OPTIMIZED: `cargo run --release --bin 30_benchmarking`. A plain
+// `cargo run` measures an unoptimized debug build, whose numbers say little
+// about real performance (the program prints a warning in that case).
 
 use std::time::{Duration, Instant};
 
@@ -34,8 +41,9 @@ fn fib_iterative(n: u64) -> u64 {
 // criterion does with statistical rigor (outlier detection, confidence
 // intervals) that this exercise skips for clarity.
 fn bench(label: &str, iterations: u32, mut f: impl FnMut()) -> Duration {
-    // Warmup — let the CPU reach a steady clock/cache state before timing,
-    // and let the JIT-free but still branch-predictor-warming Rust code settle.
+    // Warmup — let caches, the branch predictor, and CPU frequency scaling
+    // reach a steady state before timing. (There's no JIT to warm up, unlike
+    // the JVM or JavaScript, but the hardware still has state.)
     for _ in 0..iterations / 10 {
         f();
     }
@@ -52,6 +60,10 @@ fn bench(label: &str, iterations: u32, mut f: impl FnMut()) -> Duration {
 
 fn main() {
     println!("=== Exercise 30: Benchmarking & Profiling ===");
+    if cfg!(debug_assertions) {
+        println!("WARNING: this is a debug (unoptimized) build — timings are not representative.");
+        println!("         Re-run with: cargo run --release --bin 30_benchmarking");
+    }
 
     // Section 1: comparing two implementations of the same function
     println!("\n--- Section 1: fib_recursive vs fib_iterative ---");
@@ -99,7 +111,9 @@ fn main() {
     });
 
     println!("\nNotes:");
-    println!("  - Stable Rust has no built-in `cargo bench`; #[bench] is nightly-only — use `criterion` in real projects.");
+    println!("  - `cargo bench` runs on stable; only libtest's #[bench] attribute is nightly — use `criterion`");
+    println!("    (with `harness = false` in a [[bench]] target) in real projects.");
+    println!("  - Always benchmark a --release build; debug builds skip the optimizations you're measuring.");
     println!("  - criterion adds statistical rigor this harness skips: outlier rejection, variance, HTML reports.");
     println!("  - std::hint::black_box stops the optimizer from deleting or constant-folding 'unused' benchmark work.");
     println!("  - For CPU profiling beyond timing (call graphs, flamegraphs): `cargo flamegraph` or `perf record` +");

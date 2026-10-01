@@ -110,3 +110,40 @@ fn main() {
         "  - `if let`/`while let` are sugar for a match with exactly one pattern of interest."
     );
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn find_cases() {
+        let data = [10, 20, 30, 40, 20];
+        let cases = [
+            (30, Some(2)),
+            (10, Some(0)),
+            (40, Some(3)),
+            (20, Some(1)), // first match wins
+            (99, None),
+        ];
+        for (needle, expected) in cases {
+            assert_eq!(find(&data, needle), expected, "needle was {needle}");
+        }
+        assert_eq!(find(&[], 1), None);
+    }
+
+    #[test]
+    fn shape_areas() {
+        let rect = Shape::Rectangle {
+            width: 3.0,
+            height: 4.0,
+        };
+        let tri = Shape::Triangle {
+            base: 6.0,
+            height: 2.0,
+        };
+        let circle = Shape::Circle { radius: 1.0 };
+        assert!((rect.area() - 12.0).abs() < 1e-12);
+        assert!((tri.area() - 6.0).abs() < 1e-12);
+        assert!((circle.area() - std::f64::consts::PI).abs() < 1e-12);
+    }
+}

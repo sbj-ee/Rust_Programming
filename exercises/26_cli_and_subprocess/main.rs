@@ -3,6 +3,9 @@
 // Demonstrates: `std::env::args`, `std::env::var`, and
 // `std::process::Command` — the Rust analog of Go's `os.Args`/`os.Getenv`
 // and `os/exec`, and C's `argv`/`getenv`/`fork`+`exec`+`waitpid`.
+//
+// Unix-only as written: Sections 3–5 run `echo`, `wc`, `true`, and `false`,
+// which are standard on Linux/macOS but not available as programs on Windows.
 
 use std::env;
 use std::process::Command;
@@ -13,8 +16,16 @@ fn main() {
     // Section 1: command-line arguments
     println!("\n--- Section 1: env::args ---");
     let args: Vec<String> = env::args().collect();
-    println!("argv[0] (program path): {}", args[0]);
-    println!("remaining args: {:?}", &args[1..]);
+    // argv[0] is a convention, not a guarantee: a parent process can exec
+    // this program with an EMPTY argv, so `args[0]` could panic. split_first
+    // handles that case without indexing.
+    match args.split_first() {
+        Some((program, rest)) => {
+            println!("argv[0] (program path): {program}");
+            println!("remaining args: {rest:?}");
+        }
+        None => println!("argv is empty (the parent process passed no argv[0])"),
+    }
     println!("(run with `cargo run --bin 26_cli_and_subprocess -- foo bar` to pass args through)");
 
     // Section 2: environment variables
@@ -77,5 +88,11 @@ fn main() {
         "  - Command::output() is the one-shot 'run, wait, capture stdout+stderr+status' call."
     );
     println!("  - Command::spawn() + Stdio::piped() gives streaming control, needed to feed a child's stdin.");
-    println!("  - No manual fork()/exec()/waitpid(); the child process is reaped when the Child value drops or waits.");
+    println!(
+        "  - No manual fork()/exec()/waitpid(): output()/status()/wait() spawn AND reap the child."
+    );
+    println!("  - Dropping a Child does NOT wait for or kill it — it keeps running and, if never waited on,");
+    println!(
+        "    lingers as a zombie until this process exits. Always call wait()/wait_with_output()."
+    );
 }

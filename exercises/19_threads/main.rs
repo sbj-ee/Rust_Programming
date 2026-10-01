@@ -58,7 +58,10 @@ fn main() {
     println!(
         "  thread::spawn(|| counter += 1); // COMPILE ERROR: may outlive borrowed value `counter`"
     );
-    println!("  (fix: move ownership in, or share via Arc<Mutex<_>> — see exercise 21)");
+    println!(
+        "  (fix: move ownership in, share via Arc<Mutex<_>>, or use std::thread::scope so the"
+    );
+    println!("   threads may borrow because they're guaranteed to finish first — see exercise 21)");
 
     println!("\nNotes:");
     println!("  - thread::spawn returns a JoinHandle; join() blocks and yields the closure's return value.");

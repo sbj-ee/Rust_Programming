@@ -2,8 +2,10 @@
 //
 // Demonstrates: generic functions and structs, trait bounds, `where`
 // clauses, and monomorphization — the compile-time expansion that makes
-// Rust generics zero-cost, unlike Go's generics (still specialized, but a
-// younger, less-optimized implementation) or a C `void*` + macro approach.
+// Rust generics zero-cost. Go's generics are only partly specialized: Go
+// compiles one copy per GC "shape" (types with the same memory layout share
+// code) and passes a runtime dictionary for the type-specific operations.
+// C's `void*` + macro approach gives up type checking entirely.
 
 use std::fmt::Display;
 
@@ -103,7 +105,8 @@ fn main() {
     println!(
         "  - `where` clauses are equivalent to inline bounds, preferred once bounds get numerous."
     );
-    println!("  - Go's generics work structurally like this; C's void*+macros give up type safety entirely.");
+    println!("  - Go's constraints look similar, but Go shares one copy per memory 'shape' plus a runtime");
+    println!("    dictionary instead of fully monomorphizing; C's void*+macros give up type safety entirely.");
 }
 
 #[cfg(test)]

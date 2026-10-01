@@ -34,8 +34,29 @@ fn main() {
     println!("\n--- Section 2: what does NOT compile ---");
     println!("  let mut counter = 0;");
     println!("  for _ in 0..10 {{ thread::spawn(|| counter += 1); }} // COMPILE ERROR");
-    println!("  Mutex<T> or Arc<T> alone won't fix it either — you need BOTH:");
-    println!("  Arc for shared ownership across threads, Mutex for exclusive access to the data.");
+    println!(
+        "  With thread::spawn you need two things: shared OWNERSHIP (the thread may outlive this"
+    );
+    println!("  function, so it can't just borrow) and synchronized MUTATION. Arc<Mutex<T>> is the usual");
+    println!("  pairing, but not the only one:");
+    println!(
+        "  - an atomic (Arc<AtomicUsize>) replaces Mutex for a plain counter, no lock at all;"
+    );
+    println!(
+        "  - std::thread::scope (below) lets threads BORROW, so a bare Mutex works without Arc."
+    );
+
+    // Section 2b: scoped threads — borrowing instead of Arc
+    let scoped_counter = Mutex::new(0);
+    thread::scope(|s| {
+        for _ in 0..10 {
+            s.spawn(|| *scoped_counter.lock().unwrap() += 1); // borrows; no Arc, no move
+        }
+    }); // every scoped thread is joined here, so the borrow provably ends in time
+    println!(
+        "  scoped threads + plain Mutex: {}",
+        scoped_counter.into_inner().unwrap()
+    );
 
     // Section 3: RwLock<T> — many readers OR one writer, better than Mutex when reads dominate
     println!("\n--- Section 3: RwLock<T> ---");

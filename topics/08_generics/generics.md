@@ -3,20 +3,21 @@
 ## Generic Functions
 
 ```rust
-fn largest<T: PartialOrd + Copy>(values: &[T]) -> T {
-    let mut max = values[0];
-    for &v in values {
+fn largest<T: PartialOrd + Copy>(values: &[T]) -> Option<T> {
+    let (&first, rest) = values.split_first()?;   // empty slice -> None, not a panic
+    let mut max = first;
+    for &v in rest {
         if v > max { max = v; }
     }
-    max
+    Some(max)
 }
 
-largest(&[3, 7, 1]);        // T = i32
-largest(&[3.5, 1.2, 9.9]);  // T = f64, a SEPARATE compiled function
+largest(&[3, 7, 1]);        // T = i32 -> Some(7)
+largest(&[3.5, 1.2, 9.9]);  // T = f64, a SEPARATE compiled function -> Some(9.9)
 ```
 
-`T: PartialOrd + Copy` is a **trait bound** — without it, `>` and the implicit copy on
-`values[0]` wouldn't compile, because not every type supports ordering or is cheap to copy.
+`T: PartialOrd + Copy` is a **trait bound** — without it, `>` and the copy out of
+`&first` wouldn't compile, because not every type supports ordering or is cheap to copy.
 This is closer to a C++ template's implicit requirements made explicit, or to Go's
 `[T cmp.Ordered]` constraint syntax.
 
@@ -26,8 +27,9 @@ Each call site above compiles a **separate, fully specialized copy** of `largest
 `i32`, one for `f64` — at compile time. There is no runtime type dispatch, no boxing, no
 vtable: generic code runs exactly as fast as if you'd hand-written each version. The cost is
 paid at compile time (larger binaries, longer builds), not at runtime — the same tradeoff
-C++ templates make, and a stronger guarantee than Go's generics (implemented with some
-runtime dictionary-passing for cases the compiler can't fully specialize).
+C++ templates make, and a stronger guarantee than Go's generics: Go compiles one copy per
+GC "shape" (types with the same memory layout, such as all pointer types, share one copy)
+and passes a runtime dictionary for the type-specific operations.
 
 ## Generic Structs
 
@@ -91,6 +93,6 @@ once in the signature.
 |---|---|---|---|---|
 | Mechanism | `void*` + macros | Templates | Type parameters (1.18+) | Type parameters + trait bounds |
 | Type safety | None | Full, but errors can be cryptic | Full | Full, errors point at the missing bound directly |
-| Dispatch | None — you cast blindly | Compile-time (monomorphized) | Mostly compile-time, some runtime dictionary passing | Compile-time (monomorphized) — zero-cost |
+| Dispatch | None — you cast blindly | Compile-time (monomorphized) | One copy per GC shape + runtime dictionary | Compile-time (monomorphized) — zero-cost |
 | Constraining behavior | Not possible | Concepts (C++20) or SFINAE (pre-20) | Constraint interfaces (`[T cmp.Ordered]`) | Trait bounds (`T: Trait`) |
-| Binary size tradeoff | N/A | Larger (code bloat from instantiation) | Smaller (some runtime dispatch) | Larger (full monomorphization) |
+| Binary size tradeoff | N/A | Larger (code bloat from instantiation) | Smaller (shapes share code; dictionary lookups at runtime) | Larger (full monomorphization) |

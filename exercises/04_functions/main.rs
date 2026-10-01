@@ -78,8 +78,10 @@ fn main() {
     accumulate(1);
     accumulate(2);
     accumulate(3);
-    #[allow(clippy::drop_non_drop)] // dropping the closure ends its mutable borrow of `total`
-    drop(accumulate);
+    // No `drop(accumulate)` needed: thanks to non-lexical lifetimes (exercise
+    // 06), the closure's mutable borrow of `total` ends at its LAST USE above,
+    // so reading `total` here already compiles. Calling accumulate(4) AFTER
+    // this println! would be the compile error — the borrow would still be live.
     println!("total after closures = {total}");
 
     // Section 6: passing a function or closure as an argument

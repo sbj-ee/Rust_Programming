@@ -1,20 +1,25 @@
 # Unsafe Rust — Cheat Sheet
 
 `unsafe` doesn't disable the borrow checker, move semantics, or type checking — all of that
-still applies. It unlocks exactly five additional operations the compiler cannot verify are
-safe on its own, and asks *you* to uphold the invariants instead.
+still applies. It unlocks a short, fixed list of additional operations the compiler cannot
+verify are safe on its own, and asks *you* to uphold the invariants instead.
 
-## The Five Things `unsafe` Unlocks
+## What `unsafe` Unlocks
 
 ```rust
 unsafe {
     let x = *raw_ptr;                 // 1. dereference a raw pointer
     some_unsafe_fn();                  // 2. call an unsafe fn (or extern "C" fn)
-    STATIC_MUT += 1;                    // 3. mutate a mutable static
-    // 4. implement an unsafe trait (e.g. `unsafe impl Send for MyType {}`)
-    // 5. access a union field
+    STATIC_MUT += 1;                    // 3. read OR write a `static mut` (both need unsafe)
+    let f = my_union.field;             // 4. read a union field
 }
+// 5. implement an unsafe trait: `unsafe impl Send for MyType {}`
 ```
+
+Edition 2024 adds two more places the keyword appears: `unsafe extern "C" { ... }` blocks
+(you vouch that the declared signatures match the foreign code) and `unsafe` attributes such
+as `#[unsafe(no_mangle)]`. The list is still short and fixed — `unsafe` never turns off any
+other check.
 
 ## Raw Pointers
 
@@ -25,7 +30,7 @@ unsafe { println!("{}", *ptr); }      // DEREFERENCING it requires unsafe
 
 let arr = [10, 20, 30];
 let p = arr.as_ptr();
-unsafe { *p.offset(1) };               // pointer arithmetic — no bounds check, your responsibility
+unsafe { *p.add(1) };                  // pointer arithmetic — no bounds check, your responsibility
 ```
 
 Unlike a Rust reference (`&T`), a raw pointer (`*const T`/`*mut T`) can be null, dangling, or
@@ -48,12 +53,25 @@ the compiler has no way to verify the C side upholds any invariant at all.
 
 ```rust
 static mut COUNTER: i32 = 0;
-unsafe { COUNTER += 1; }
+let snapshot = unsafe { COUNTER += 1; COUNTER };   // copy the value out...
+println!("{snapshot}");                            // ...never `println!("{COUNTER}")`
 ```
 
 A `static mut` is a global variable the compiler cannot prove is race-free — mutating it
 from multiple threads without synchronization is a data race `unsafe` does **not** protect
-you from; it just marks that you, not the compiler, are now responsible.
+you from; it just marks that you, not the compiler, are now responsible. Even creating a
+*reference* to one (which `println!("{COUNTER}")` does implicitly) is flagged by the
+`static_mut_refs` lint, because any write while that reference lives is undefined behavior.
+
+The idiomatic replacement needs no `unsafe` at all:
+
+```rust
+use std::sync::atomic::{AtomicI32, Ordering};
+static COUNTER: AtomicI32 = AtomicI32::new(0);
+COUNTER.fetch_add(1, Ordering::Relaxed);           // safe from any thread
+```
+
+(`Mutex<T>` and `OnceLock<T>` in a plain `static` cover the non-integer cases.)
 
 ## The Real Purpose: Building Safe Abstractions
 
@@ -78,16 +96,16 @@ behavior — exactly as bad as in C, and the compiler is free to assume it never
 which can produce surprising miscompilations far from the actual bug.
 
 ```bash
-cargo miri run     # (nightly tool) interprets your program and flags UB in unsafe code
-                     # that a normal run might not visibly break on — the closest Rust
-                     # equivalent to valgrind's Memcheck, but UB-aware, not just leak-aware
+cargo +nightly miri run   # (nightly-only) interprets your program and flags UB in unsafe code
+                          # that a normal run might not visibly break on — the closest Rust
+                          # equivalent to valgrind's Memcheck, but UB-aware, not just leak-aware
 ```
 
 ## Comparison to C / C++
 
 | Concern | C | C++ | Rust (safe) | Rust (`unsafe`) |
 |---|---|---|---|---|
-| Pointer dereference | Always allowed, unchecked | Always allowed, unchecked | Not applicable — no raw pointers | Allowed, unchecked — your responsibility |
+| Pointer dereference | Always allowed, unchecked | Always allowed, unchecked | Raw pointers can be *created* but not dereferenced; references are always valid | Allowed, unchecked — your responsibility |
 | Bounds checking | None | None (unless `.at()`) | Always (`Vec`/slice indexing panics) | None if you use raw pointer arithmetic |
 | Marking risky code | Not distinguished from safe code | Not distinguished from safe code | N/A | Explicitly delimited by an `unsafe` block/fn |
 | UB detection tools | valgrind, ASan, UBSan | valgrind, ASan, UBSan | Not needed (UB impossible in safe code) | `cargo miri`, plus the C/C++ tools still work |

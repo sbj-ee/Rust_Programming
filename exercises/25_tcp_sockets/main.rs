@@ -6,28 +6,25 @@
 // C's raw BSD sockets, minus the manual `bind`/`listen`/`accept` dance and
 // the risk of leaking a file descriptor (the socket closes on `Drop`).
 
-use std::io::{BufRead, BufReader, Write};
-use std::net::{TcpListener, TcpStream};
+use std::io::{self, BufRead, BufReader, Write};
+use std::net::{SocketAddr, TcpListener, TcpStream};
 use std::thread;
 
-fn handle_client(stream: TcpStream) {
-    let peer = stream.peer_addr().unwrap();
-    let reader = BufReader::new(stream.try_clone().unwrap());
+// Returning io::Result lets every fallible socket call use `?` instead of
+// unwrap(): a client that disconnects mid-handshake becomes an Err the
+// caller can log, not a panic that kills the handler thread.
+fn handle_client(stream: TcpStream) -> io::Result<SocketAddr> {
+    let peer = stream.peer_addr()?;
+    let reader = BufReader::new(stream.try_clone()?);
     let mut writer = stream;
     for line in reader.lines() {
-        let line = match line {
-            Ok(l) => l,
-            Err(_) => break,
-        };
+        let line = line?;
         if line == "quit" {
             break;
         }
-        let reply = format!("echo: {line}\n");
-        if writer.write_all(reply.as_bytes()).is_err() {
-            break;
-        }
+        writer.write_all(format!("echo: {line}\n").as_bytes())?;
     }
-    println!("  [server] connection from {peer} closed");
+    Ok(peer)
 }
 
 fn main() -> std::io::Result<()> {
@@ -43,12 +40,21 @@ fn main() -> std::io::Result<()> {
     println!("\n--- Section 2: accept loop (background thread) ---");
     let server = thread::spawn(move || {
         // accept exactly 2 connections for this exercise, then stop
+        let mut handlers = Vec::new();
         for stream in listener.incoming().take(2) {
             match stream {
-                Ok(s) => {
-                    thread::spawn(move || handle_client(s));
-                }
+                Ok(s) => handlers.push(thread::spawn(move || handle_client(s))),
                 Err(e) => eprintln!("accept error: {e}"),
+            }
+        }
+        // Join every handler before the accept thread finishes, so main's
+        // server.join() below really means "all connections are done" and
+        // no handler is still printing when the process exits.
+        for h in handlers {
+            match h.join() {
+                Ok(Ok(peer)) => println!("  [server] connection from {peer} closed"),
+                Ok(Err(e)) => eprintln!("  [server] connection error: {e}"),
+                Err(_) => eprintln!("  [server] handler thread panicked"),
             }
         }
     });
@@ -81,7 +87,7 @@ fn main() -> std::io::Result<()> {
         writer.write_all(b"quit\n")?;
     }
 
-    server.join().unwrap();
+    server.join().expect("server thread panicked");
 
     println!("\nNotes:");
     println!("  - TcpListener::bind + .incoming() replaces bind()/listen()/accept() from raw BSD sockets.");

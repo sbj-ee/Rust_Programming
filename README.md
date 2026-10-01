@@ -13,6 +13,7 @@ management or garbage collection.
 ```
 Rust_Programming/
 ├── Cargo.toml       # Single package; every exercise is an explicit [[bin]] target
+├── LICENSE          # MIT
 ├── Introduction.md  # Dev environment, build tools, exercise progression
 ├── Foreword.md      # Rust's origins at Mozilla, ownership, fearless concurrency
 ├── exercises/       # Progressive programs, each building on the last
@@ -240,3 +241,7 @@ strip target/release/30_benchmarking                   # remove debug symbols, s
 | ASan / UBSan | catch UB at runtime | `cargo miri` — catches UB in an interpreter, not just at runtime on real hardware |
 | `ar`/`.a`, `.so` + `LD_LIBRARY_PATH` | static/shared libraries | `.rlib` (Rust-only); C-compatible `.a` via `crate-type = ["staticlib"]` and `.so`/`.dylib` via `crate-type = ["cdylib"]` (`dylib` is a Rust-ABI library, not for C callers) |
 | `strings` | find readable text in a binary | `strings` — unchanged, Rust binaries are still ELF/Mach-O |
+
+## License
+
+MIT — see [LICENSE](LICENSE).

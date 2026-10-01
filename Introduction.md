@@ -56,7 +56,7 @@ cargo run --bin 09_enums_and_pattern_matching
 cargo build --bin 09_enums_and_pattern_matching
 ./target/debug/09_enums_and_pattern_matching
 
-# Run the test suite (exercise 17's greeting.rs, exercise 18, and any other #[cfg(test)] mods)
+# Run the test suite (every #[cfg(test)] mod — exercises 07, 09, 10, 12, 17, 18, 23, 24)
 make test
 
 # Format-check and lint everything
@@ -152,5 +152,5 @@ The same systems tasks as the POSIX exercises in the C/C++ companion repos and t
 
 - A single `main.rs` with `fn main()` and at least four named sections
 - Output produced by running it — `cargo run --bin NN_topic`
-- Zero warnings from `cargo clippy --all-targets -- -D warnings`
-- Formatting that matches `cargo fmt` exactly (enforced, not a style suggestion)
+- Zero warnings from `cargo clippy --all-targets -- -D warnings` (enforced by CI on stable)
+- Formatting that matches `cargo fmt` exactly (enforced by CI, not a style suggestion)

@@ -23,7 +23,7 @@ crate keeps building.
 
 ## Ownership: The Idea With No Precedent in C, C++, or Go
 
-Every other language in this monorepo picks one of two strategies for memory: manual
+Every other language in the companion repos picks one of two strategies for memory: manual
 management (C, and C++ without discipline) or garbage collection (Go). Rust picks a third
 option nobody had shipped at this scale before: an **ownership system**, checked entirely at
 compile time, that tracks who is responsible for freeing every value and proves — before the
@@ -82,7 +82,7 @@ typed-nil-in-an-interface footgun leave open).
 Rust ships `rustfmt`, `clippy`, `cargo test`, `cargo doc`, and a dependency/build system
 (`Cargo`) in the box, the same "no argument about which build system this project uses"
 philosophy Go's toolchain has — applied to a language with a much larger surface area than
-Go's deliberately small one. Where `Go_Programming` needed no per-exercise Makefile because
+Go's deliberately small one. Where [Go_Programming](https://github.com/sbj-ee/Go_Programming) needed no per-exercise Makefile because
 `go build ./...` auto-discovers every `package main`, this project needs an explicit
 `[[bin]]` entry per exercise in `Cargo.toml` (Appendix A of the README) because Cargo's
 auto-discovery only looks in `src/bin/` — a small but real difference in how much the two
@@ -90,8 +90,8 @@ toolchains assume about your project layout.
 
 ## Rust, C, C++, and Go Together
 
-This project is a companion to `C_Programming`, `CPP_Programming`, and `Go_Programming` in
-this monorepo. Where `C_Programming` explores manual memory management and `CPP_Programming`
+This project is a companion to the separate [C_Programming](https://github.com/sbj-ee/C_Programming), [CPP_Programming](https://github.com/sbj-ee/CPP_Programming), and
+[Go_Programming](https://github.com/sbj-ee/Go_Programming) repos. Where `C_Programming` explores manual memory management and `CPP_Programming`
 explores RAII and zero-cost abstraction with a garbage-collector-free runtime, and
 `Go_Programming` explores the same systems topics with a garbage collector and structural
 interfaces, this project explores them through an ownership system that gets you C++'s

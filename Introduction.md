@@ -2,8 +2,8 @@
 
 ## Who This Is For
 
-This project is for programmers who already know C and/or C++ (see `C_Programming` and
-`CPP_Programming` in this monorepo) — and ideally have also seen `Go_Programming` — and want
+This project is for programmers who already know C and/or C++ (see the companion repos
+[C_Programming](https://github.com/sbj-ee/C_Programming) and [CPP_Programming](https://github.com/sbj-ee/CPP_Programming)) — and ideally have also seen [Go_Programming](https://github.com/sbj-ee/Go_Programming) — and want
 to learn idiomatic Rust. If you can read a `struct`, follow a pointer, and use a Makefile,
 you are ready. No prior Rust experience is assumed.
 
@@ -39,7 +39,7 @@ cargo clippy --all-targets -- -D warnings   # static analysis, far broader than 
 cargo doc --open       # build and browse API docs, including for the standard library
 
 # Optional but useful
-rustup component add miri    # UB detector for unsafe code (exercise 27)
+rustup +nightly component add miri   # UB detector for unsafe code (exercise 27) — NIGHTLY-ONLY
 rust-gdb --version            # gdb with Rust-aware pretty-printers
 ```
 
@@ -69,7 +69,7 @@ make clean
 There is no per-exercise Makefile. Every exercise is declared as an explicit `[[bin]]`
 target in the single project-root `Cargo.toml`, pointing at
 `exercises/<NN_name>/main.rs` — see the README's Appendix A for why this needs to be
-explicit here, unlike `Go_Programming`'s `go build ./...` wildcard.
+explicit here, unlike Go's `go build ./...` wildcard.
 
 ## Exercise Progression
 
@@ -100,7 +100,7 @@ The features that make Rust distinct from a "C++ with a friendlier compiler."
 | # | Topic | Core Idea |
 |---|-------|-----------|
 | 11 | Traits | EXPLICIT `impl Trait for Type` (no implicit satisfaction like Go); static vs `dyn` dispatch |
-| 12 | Generics | Trait bounds + monomorphization — zero-cost, unlike Go's partial runtime dispatch |
+| 12 | Generics | Trait bounds + full monomorphization — one specialized copy per concrete type, unlike Go's shape-based stenciling with runtime dictionaries |
 | 13 | Collections | `Vec`, `HashMap`, `BTreeMap`, `HashSet`, `VecDeque` — explicit capacity/growth control |
 | 14 | Closures & Iterators | `Fn`/`FnMut`/`FnOnce`; lazy adapter chains that compile to a hand-written loop |
 | 15 | Lifetimes | `'a` annotations proving a reference never outlives its data — elided most of the time |
@@ -110,8 +110,8 @@ The features that make Rust distinct from a "C++ with a friendlier compiler."
 
 ### Tier 3 — Concurrency & Standard Library (19–26)
 
-The same systems tasks as the POSIX exercises in `C_Programming`/`CPP_Programming` and the
-`net`/`os`-based ones in `Go_Programming`, done with Rust's standard library.
+The same systems tasks as the POSIX exercises in the C/C++ companion repos and the
+`net`/`os`-based ones in the Go companion repo, done with Rust's standard library.
 
 | # | Topic | Standard Library |
 |---|-------|-------------------|
@@ -131,15 +131,15 @@ The same systems tasks as the POSIX exercises in `C_Programming`/`CPP_Programmin
 | 27 | Unsafe Rust | Raw pointers, `extern "C"` FFI, mutable statics — the 5 things `unsafe` unlocks, nothing more |
 | 28 | Macros | `macro_rules!` — hygienic, syntax-aware, unlike C's `#define` text substitution |
 | 29 | Async/Await | `async fn`/`.await`, and why `std` ships `Future` but deliberately no executor |
-| 30 | Benchmarking & Profiling | A hand-rolled `Instant`-based harness — why stable Rust has no built-in `cargo bench` |
+| 30 | Benchmarking & Profiling | A hand-rolled `Instant`-based harness; `cargo bench` runs on stable, only `#[bench]` is nightly — run with `--release` |
 
-## Key Differences from C_Programming / CPP_Programming / Go_Programming
+## Key Differences from C / C++ / Go (the companion repos)
 
 | Concern | C | C++ | Go | Rust |
 |---------|---|-----|-----|------|
 | Memory | `malloc`/`free` | RAII + smart pointers | Garbage collected | Ownership, compile-time checked; `Drop` on scope exit |
 | Null safety | `NULL`, unchecked | `nullptr`, unchecked | `nil`, typed-nil pitfall | No null — `Option<T>`, exhaustively matched |
-| Generics | `void *` + macros | Templates | Type parameters (1.18+), partial runtime dispatch | Type parameters + trait bounds, fully monomorphized |
+| Generics | `void *` + macros | Templates | Type parameters (1.18+), stenciled per memory "shape" + runtime dictionaries | Type parameters + trait bounds, fully monomorphized |
 | Polymorphism | Function pointer tables | `virtual`/`override` | Implicit interfaces | Traits, EXPLICIT `impl Trait for Type` |
 | Error handling | Return codes + `errno` | Exceptions | `error` return values | `Result<T, E>` + `?`, `#[must_use]`-enforced |
 | Concurrency | `pthread_t` + mutexes | `std::thread` + mutexes | Goroutines + channels | OS threads; data races are COMPILE errors |

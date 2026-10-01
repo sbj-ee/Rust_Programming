@@ -2,15 +2,17 @@
 name = "rust_programming"
 version = "0.1.0"
 edition = "2021"
+rust-version = "1.75"
+license = "MIT"
 publish = false
 
 # Every exercise is a standalone `main.rs` under exercises/<NN_name>/, the same
-# layout ../Go_Programming uses for `package main` directories. Cargo does not
+# layout the Go_Programming companion repo uses for `package main` directories. Cargo does not
 # auto-discover binaries outside `src/bin/`, so each one is declared explicitly
 # below. `cargo build` builds all of them; `cargo run --bin NN_name` runs one.
 #
 # No external dependencies — every exercise uses only the standard library,
-# matching the rule ../Go_Programming and ../CPP_Programming follow.
+# matching the rule the Go_Programming and CPP_Programming companion repos follow.
 
 [[bin]]
 name = "01_hello_world"
@@ -133,4 +135,6 @@ name = "30_benchmarking"
 path = "exercises/30_benchmarking/main.rs"
 
 [profile.release]
+# Keep debug symbols in optimized builds so profilers (perf, flamegraph) and
+# debuggers can map exercise 30's hot code back to source lines.
 debug = true

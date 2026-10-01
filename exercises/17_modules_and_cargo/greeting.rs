@@ -1,6 +1,7 @@
 // A separate file, pulled in by `mod greeting;` in main.rs — the same
-// pattern as ../Go_Programming's exercises/30_modules_and_packages/greeting
-// subpackage, but a module here is a file, not a directory-as-namespace.
+// pattern as the greeting subpackage in the Go_Programming companion repo
+// (https://github.com/sbj-ee/Go_Programming, exercises/30_modules_and_packages),
+// but a module here is a file, not a directory-as-namespace.
 
 pub fn hello(name: &str) -> String {
     format!("Hello, {name}, from the greeting module!")

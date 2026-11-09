@@ -150,7 +150,10 @@ The same systems tasks as the POSIX exercises in the C/C++ companion repos and t
 
 ## Every File Has
 
-- A single `main.rs` with `fn main()` and at least four named sections
+- A single `main.rs` with `fn main()`. Most exercises use numbered `--- Section N ---`
+  blocks (four or more). Exceptions: `18_testing` is deliberately test-focused (its
+  interesting content is in `cargo test`, not sectioned demos), and `01_hello_world`,
+  `17_modules_and_cargo`, `29_async_await`, and `30_benchmarking` each have three.
 - Output produced by running it — `cargo run --bin NN_topic`
 - Zero warnings from `cargo clippy --all-targets -- -D warnings` (enforced by CI on stable)
 - Formatting that matches `cargo fmt` exactly (enforced by CI, not a style suggestion)

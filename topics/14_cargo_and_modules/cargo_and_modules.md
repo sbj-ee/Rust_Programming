@@ -56,10 +56,11 @@ version" opt-in, not a compiler version), and dependencies with semver ranges.
 
 ## `Cargo.lock` — Pinned, Resolved Versions
 
-Generated automatically; the analog of `go.sum`. For **binaries**, commit it (reproducible
-builds); for **libraries**, it's typically left uncommitted (the downstream binary's lock
-file is what matters). This project has no dependencies, so `Cargo.lock` is trivial either
-way.
+Generated automatically; the analog of `go.sum`. Since August 2023, Cargo's guidance is to
+**commit `Cargo.lock` by default** for both applications and libraries (do what fits the
+project; committing is the suggested starting point). A library's lockfile still does **not**
+affect downstream consumers — only `Cargo.toml` does — so users of your crate resolve their
+own dependency graph. This project has no dependencies, so `Cargo.lock` is trivial either way.
 
 ## Crate Types
 

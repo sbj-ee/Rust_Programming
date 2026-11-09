@@ -61,7 +61,7 @@ impl Future for Delay {
 
 A `Future` that isn't ready returns `Poll::Pending` and stashes a clone of the `Waker` it was
 given — the executor's contract is: don't bother polling this future again until its waker
-fires. A hand-rolled `block_on` (exercise 29) demonstrates the whole loop in ~15 lines: poll,
+fires. A hand-rolled `block_on` (exercise 29) demonstrates the whole loop in 13 lines: poll,
 and if `Pending`, park the thread until `Waker::wake()` unparks it.
 
 ## No `.await` Concurrency Without a Crate

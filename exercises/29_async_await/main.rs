@@ -1,7 +1,7 @@
 // Exercise 29: Async/Await
 //
 // Demonstrates: `async fn`/`.await`, and — because `std` deliberately ships
-// no executor — a ~30-line hand-rolled `block_on` that shows what a real
+// no executor — a 13-line hand-rolled `block_on` that shows what a real
 // runtime (tokio, async-std) does under the hood: poll a `Future`, and
 // when it returns `Poll::Pending`, sleep the thread until a `Waker` says
 // to try again. This is the one place the zero-dependency rule costs real
